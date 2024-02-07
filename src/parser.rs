@@ -11,7 +11,7 @@ use nom::{
     sequence::pair,
     IResult,
 };
-use std::{mem::size_of, str, str::Utf8Error};
+use std::{mem::size_of, str::{self, Utf8Error}};
 
 #[cfg(feature = "ahash")]
 use ahash::AHashMap as HashMap;
@@ -32,6 +32,7 @@ pub enum Chunk {
     GroupNode(SceneGroup),
     ShapeNode(SceneShape),
     Layer(RawLayer),
+    Imap(Vec<usize>),
     Unknown(String),
     Invalid(Vec<u8>),
 }
@@ -205,6 +206,7 @@ fn map_chunk_to_data(version: u32, main: Chunk) -> DotVoxData {
             let mut materials: Vec<Material> = vec![];
             let mut scene: Vec<SceneNode> = vec![];
             let mut layers: Vec<Layer> = Vec::new();
+            let mut palette_map: Option<Vec<u8>> = None;
 
             for chunk in children {
                 match chunk {
@@ -241,10 +243,16 @@ fn map_chunk_to_data(version: u32, main: Chunk) -> DotVoxData {
                                 layer.id
                             );
                         }
-
                         layers.push(Layer {
                             attributes: layer.attributes,
                         });
+                    }
+                    Chunk::Imap(imap) => {
+                        let mut remap: Vec<u8> = vec![0;256];
+                        imap.iter().enumerate().for_each(|(idx, val)|{
+                            remap[*val] = idx as u8;
+                        });
+                        palette_map = Some(remap);
                     }
                     _ => debug!("Unmapped chunk {:?}", chunk),
                 }
@@ -254,6 +262,7 @@ fn map_chunk_to_data(version: u32, main: Chunk) -> DotVoxData {
                 version,
                 models,
                 palette: palette_holder,
+                palette_map: palette_map.unwrap_or((0u8..=255u8).collect()),
                 materials,
                 scenes: scene,
                 layers,
@@ -263,6 +272,7 @@ fn map_chunk_to_data(version: u32, main: Chunk) -> DotVoxData {
             version,
             models: vec![],
             palette: vec![],
+            palette_map: vec![],
             materials: vec![],
             scenes: vec![],
             layers: vec![],
@@ -290,6 +300,7 @@ fn build_chunk(id: &str, chunk_content: &[u8], children_size: u32, child_content
             "nGRP" => build_scene_group_chunk(chunk_content),
             "nSHP" => build_scene_shape_chunk(chunk_content),
             "LAYR" => build_layer_chunk(chunk_content),
+            "IMAP" => build_imap_chunk(chunk_content),
             _ => {
                 debug!("Unknown childless chunk {:?}", id);
                 Chunk::Unknown(id.to_owned())
@@ -367,6 +378,13 @@ fn build_layer_chunk(chunk_content: &[u8]) -> Chunk {
     match scene::parse_layer(chunk_content) {
         Ok((_, layer)) => Chunk::Layer(layer),
         _ => Chunk::Invalid(chunk_content.to_vec()),
+    }
+}
+
+fn build_imap_chunk(chunk_content: &[u8]) -> Chunk {
+    match palette::parse_imap(chunk_content) {
+        Ok((_, result)) => Chunk::Imap(result.into_iter().map(Into::<usize>::into).collect()),
+        _ => Chunk::Invalid(chunk_content.to_vec())
     }
 }
 

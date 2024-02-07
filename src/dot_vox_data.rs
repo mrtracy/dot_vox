@@ -10,6 +10,8 @@ pub struct DotVoxData {
     pub models: Vec<Model>,
     /// A `Vec` containing the colour palette as 32-bit integers
     pub palette: Vec<Color>,
+    /// Map from voxel values to their *true* palette value.
+    pub palette_map: Vec<u8>,
     /// A `Vec` containing all the [`Material`]s set.
     pub materials: Vec<Material>,
     /// Scene. The first node in this list is always the root node.

@@ -20,6 +20,7 @@ fn parse_color(input: &[u8]) -> IResult<&[u8], Color> {
     Ok((input, Color { r, g, b, a }))
 }
 
+
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub struct Color {
     pub r: u8,
@@ -37,4 +38,8 @@ impl From<&Color> for [u8; 4] {
     fn from(color: &Color) -> Self {
         [color.r, color.g, color.b, color.a]
     }
+}
+
+pub fn parse_imap(input: &[u8]) -> IResult<&[u8], Vec<u8>> {
+    all_consuming(many0(le_u8))(input)
 }

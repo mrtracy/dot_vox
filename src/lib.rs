@@ -93,6 +93,7 @@ pub use palette::DEFAULT_PALETTE;
 ///             )
 ///         }),
 ///         palette: DEFAULT_PALETTE.to_vec(),
+///         palette_map: (0u8..=255u8).collect(),
 ///         materials: (0..256)
 ///             .into_iter()
 ///             .map(|i| Material {
@@ -184,6 +185,7 @@ pub fn load(filename: &str) -> Result<DotVoxData, &'static str> {
 ///             )
 ///         }),
 ///         palette: DEFAULT_PALETTE.to_vec(),
+///         palette_map: (0u8..=255u8).collect(),
 ///         materials: (0..256)
 ///             .into_iter()
 ///             .map(|i| Material {
@@ -324,6 +326,7 @@ mod tests {
                 ],
             }],
             palette,
+            palette_map: (0u8..=255u8).collect(),
             materials,
             scenes,
             layers,
